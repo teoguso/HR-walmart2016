@@ -145,8 +145,8 @@ def train_clf(X, y, clf_type='rnd_forest'):
         from sklearn.ensemble import RandomForestClassifier
         myclf = RandomForestClassifier()
     elif clf_type == 'logreg':
-        from sklearn.ensemble import
-        myclf = RandomForestClassifier()
+        from sklearn.linear_model import SGDClassifier
+        myclf = SGDClassifier()
     else:
         raise ValueError("No other classifier type is possible yet.")
     clf = OneVsRestClassifier(myclf, n_jobs=-1)
