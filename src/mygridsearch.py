@@ -61,6 +61,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 
 print(__doc__)
+from sklearn.datasets import fetch_20newsgroups
 
 import json
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -93,6 +94,7 @@ def main():
     logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
+    # ========================================= #
     ###############################################################################
     # Load some categories from the training set
     # categories = [
@@ -101,15 +103,17 @@ def main():
     # ]
     # Uncomment the following to do the analysis on all the categories
     #categories = None
-
     # print("Loading 20 newsgroups dataset for categories:")
     # print(categories)
-
     # data = fetch_20newsgroups(subset='train', categories=categories)
     # print("%d documents" % len(data.filenames))
     # print("%d categories" % len(data.target_names))
-    test = False
+    # print(data.data[:1], data.target[:1])
+    # exit("DEBUG")
+    # ======================================================= #
+
     test = True
+    test = False
     if test:
         df = pd.read_table("../data/train.tsv")
         df_test = pd.read_table("../data/test.tsv")
