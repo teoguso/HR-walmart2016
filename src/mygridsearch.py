@@ -53,6 +53,7 @@ from pprint import pprint
 from time import time
 import logging
 
+import numpy as np
 # from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -78,7 +79,11 @@ def format_df(df):
     # we have to remove the records with only NaN in the description
     df = df[-df['Product Name'].isnull()]
 
-    df['label'] = df['tag'].apply(lambda x: json.loads(x))
+    df['label'] = df['tag'].apply(lambda x: np.array(eval(x)))
+    # print([(type(x), x) for x in df.label[:9].values])
+    # print(df.label.values[:10].shape)
+    # exit("DEBUG")
+    # df['label'] = df['tag'].apply(lambda x: json.loads(x))
     mlb = MultiLabelBinarizer()
     blabels = mlb.fit_transform(df['label'])
     # print(blabels.shape)
@@ -122,24 +127,31 @@ def main():
     else:
         df = pd.read_table("../data/train.tsv")
         # Uncomment to reduce data for testing purposes
-        df = df.iloc[:1000]
+        # df = df.iloc[:1000]
 
     df, blabels, mlb = format_df(df)
 
     soups = [BeautifulSoup(item, "lxml").get_text(separator="\n")
              for item in df['Product Long Description']]
 
-    X, y = soups, blabels
+    X, y = soups, blabels # .ravel()
+    print(np.array(X).shape, np.array(y).shape)
+    # print(np.array(X).shape, np.array(y).shape)
+    # exit("DEBUG")
     # print()
 
     ###############################################################################
     # define a pipeline combining a text feature extractor with a simple
     # classifier
+    from sklearn.multiclass import OneVsRestClassifier
+    myclf = SGDClassifier()
+    clf = OneVsRestClassifier(myclf, n_jobs=-1)
     pipeline = Pipeline([
         ('vect', CountVectorizer()),
         ('tfidf', TfidfTransformer()),
-        ('clf', SGDClassifier()),
+        ('clf', OneVsRestClassifier(myclf, n_jobs=-1)),
     ])
+    # ('clf', SGDClassifier()),
 
     # uncommenting more parameters will give better exploring power but will
     # increase processing time in a combinatorial way
@@ -154,12 +166,29 @@ def main():
         #'clf__n_iter': (10, 50, 80),
     }
 
+    parameters_fake = {
+        'vect__max_df': (0.5, 0.75, 1.0),
+        #'vect__max_features': (None, 5000, 10000, 50000),
+        'vect__ngram_range': ((1, 1), (1, 2)),  # unigrams or bigrams
+        #'tfidf__use_idf': (True, False),
+        #'tfidf__norm': ('l1', 'l2'),
+        'clf__estimator__alpha': (0.00001, 0.000001),
+        'clf__estimator__penalty': ('l2', 'elasticnet'),
+        #'clf__n_iter': (10, 50, 80),
+    }
+    # 'clf__estimator__alpha': ((0.00001),), # 0.000001),
+    # 'vect__ngram_range': ((1, 1),), # (1, 2)),  # unigrams or bigrams
+    # 'vect__max_df': (0.5,), #, 0.75, 1.0),
+    # 'estimator__clf__alpha': ((0.00001),), # 0.000001),
+    # 'estimator__clf__penalty': ('l2',), #, 'elasticnet'),
+
     # multiprocessing requires the fork to happen in a __main__ protected
     # block
 
     # find the best parameters for both the feature extraction and the
     # classifier
-    grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
+    parameters = parameters_fake
+    grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1, scoring='f1_samples')
 
     print("Performing grid search...")
     print("pipeline:", [name for name, _ in pipeline.steps])
