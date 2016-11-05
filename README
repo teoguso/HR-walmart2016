@@ -1,0 +1,33 @@
+Readme file for the Walmart challenge code
+Author: Matteo Guzzo
+
+This tree assumes that the data/ folder contains the train.tsv and test.tsv files.
+
+USE PYTHON 3.5 !!!
+
+Here below the bash commands necessary to run the code and produce the
+file tags.tsv from train.tsv and test.tsv
+
+cd src
+python mygridsearch.py
+cd ..
+python Test_pickle.py
+
+Here below all the python imports that are in the scripts:
+
+from pprint import pprint
+from time import time
+import logging
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+import pandas as pd
+from sklearn.externals import joblib
+from bs4 import BeautifulSoup
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import MultiLabelBinarizer
+
+

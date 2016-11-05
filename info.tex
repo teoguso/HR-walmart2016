@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{palatino}
+
+\author{Matteo Guzzo}
+\date{\today}
+\title{Documentation for the Walmart challenge on Hackerrank.com}
+
+\begin{document}
+\maketitle
+
+\section{Data exploration}
+
+A rapid look at the database shows that there are a lot of missing data, and
+some records only have tags, without any useful data.
+
+The first \emph{apriori} decision I took was to use the \emph{mode},
+taken from the train set, to tag all records that are predicted as
+having no tag or don't have information at all.
+
+I also decided to use the field "Product Long Description" as the sole
+source of data for feature extraction.
+This is of course and arbitrary choice, but this field is
+the only one that is available for almost all records.
+All other fileds were very sparse and would need more complex
+feature engineering to be exploited.
+
+To summarize, I only used the columns \textbf{'item\_id', 'Product Long Description', 'tag'}
+from the training set.
+
+\section{Feature extraction}
+
+I parsed the HTML data contained in 'Product Long Description' using BeautifulSoup
+and fed it to a scikit-learn pipeline, that I used in order to find the best parameters
+from the model. This is a fairly standard procedure that can be found in the
+scikit-learn documentation.
+
+The pipeline contains a CountVectorizer, that tokenizes the text and converts it to
+a sparse matrix of values.
+An additional level of complexity is applied here, by including bi-grams and tri-grams.
+
+The next step in the pipeline is the TfidfTransformer,
+that renormalizes the values of words using TF-IDF.
+
+The so-obtained sparse matrix is then ready to be used to train the classifier.
+
+
+\section{Model training}
+
+Before one can train the model, one must find an apppropriate representation
+for the labels. It this case one speaks of \emph{multi-label classification},
+in that there are multiple classes, but an instance can belong to more than
+one class.
+Scikit-learn has the OneVsRestClassifier, that works perfectly with this
+kind of classification problem.
+This is a proxy for the actual linear classifier that I used, SGDClassifier.
+Linear classifier have shown to perform as well or better
+than more complex nonlinear
+classifiers with high-dimensional data such as text.
+Moreover linear model are in general much faster than non-linear ones.
+
+Using the automated grid search tool one can optimize the hyperparameters
+using a selected scoring function (F1 in this case)
+and save the best combination to disk using the joblib library.
+The details of the parameters can be found in the code.
+Here below my result for the grid search:
+\begin{verbatim}
+ Best score: 0.723
+ Best parameters set:
+	clf__estimator__alpha: 1e-06
+	clf__estimator__penalty: 'elasticnet'
+	vect__max_df: 1.25
+	vect__ngram_range: (1, 3)
+\end{verbatim}
+
+\subsection{Multilabel representation}
+
+The classifier needs a specific representation for the label of our dataset.
+Namely I have used a one-hot representation using a 32-long (there are 32 classes)
+binary array.
+
+This process is automatized within the MultiLabelBinarizer, contained
+in the preprocessing toolbox of scikit learn.
+
+
+\section{Prediction}
+
+To obtain a prediction, one needs to parse the text from the test.tsv file
+(as before, from the "Long Product Description" field) using BeautifulSoup.
+The pipeline is able to use this text data directly to predict labels.
+
+As a final step, I have converted the binary vectors to the original labels
+and put all empty tags (or empty records) equal to the mode from train.tsv.
+
+
+\section{Final Notes}
+
+The code is NOT polished.
+The grid search algorithm should be skipped after is performed once,
+and save quite a bit of time.
+
+
+\end{document}
+
