@@ -53,28 +53,29 @@ from pprint import pprint
 from time import time
 import logging
 
-import numpy as np
 # from sklearn.datasets import fetch_20newsgroups
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 
-print(__doc__)
+import pandas as pd
+from sklearn.externals import joblib
+from bs4 import BeautifulSoup
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import MultiLabelBinarizer
+
+# print(__doc__)
 from sklearn.datasets import fetch_20newsgroups
 
 import json
-from sklearn.preprocessing import MultiLabelBinarizer
-import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.externals import joblib
-from bs4 import BeautifulSoup
 
 
 def format_df(df):
     import json
-    from sklearn.preprocessing import MultiLabelBinarizer
 
     # we have to remove the records with only NaN in the description
     df = df[-df['Product Name'].isnull()]
@@ -143,7 +144,6 @@ def main():
     ###############################################################################
     # define a pipeline combining a text feature extractor with a simple
     # classifier
-    from sklearn.multiclass import OneVsRestClassifier
     myclf = SGDClassifier()
     clf = OneVsRestClassifier(myclf, n_jobs=-1)
     pipeline = Pipeline([
@@ -166,14 +166,14 @@ def main():
         #'clf__n_iter': (10, 50, 80),
     }
 
-    parameters_fake = {
-        'vect__max_df': (0.5, 0.75, 1.0),
+    parameters_better = {
+        'vect__max_df': (1.0, 1.25),
         #'vect__max_features': (None, 5000, 10000, 50000),
-        'vect__ngram_range': ((1, 1), (1, 2)),  # unigrams or bigrams
+        'vect__ngram_range': ((1, 2), (1, 3) ),  # unigrams or bigrams or trigrams
         #'tfidf__use_idf': (True, False),
         #'tfidf__norm': ('l1', 'l2'),
-        'clf__estimator__alpha': (0.00001, 0.000001),
-        'clf__estimator__penalty': ('l2', 'elasticnet'),
+        'clf__estimator__alpha': (1e-6, ),
+        'clf__estimator__penalty': ('elasticnet', ),
         #'clf__n_iter': (10, 50, 80),
     }
     # 'clf__estimator__alpha': ((0.00001),), # 0.000001),
@@ -187,7 +187,7 @@ def main():
 
     # find the best parameters for both the feature extraction and the
     # classifier
-    parameters = parameters_fake
+    parameters = parameters_better
     grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1, scoring='f1_samples')
 
     print("Performing grid search...")
@@ -205,6 +205,11 @@ def main():
     best_parameters = grid_search.best_estimator_.get_params()
     for param_name in sorted(parameters.keys()):
         print("\t%s: %r" % (param_name, best_parameters[param_name]))
+
+
+    joblib.dump(grid_search.best_estimator_, "best.pkl")
+    joblib.dump(pipeline, "pipeline.pkl")
+
 
 if __name__ == "__main__": main()
 
