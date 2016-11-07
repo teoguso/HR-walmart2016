@@ -2,3 +2,8 @@ data/*.zip
 *.tsv
 .idea/
 *.pkl
+.ipynb_checkpoints/
+*.aux
+*.dvi
+*.log
+*.pdf
